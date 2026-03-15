@@ -1,24 +1,126 @@
 <!DOCTYPE html>
-<html>
-  <head>
+<html lang="am">
+<head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8">
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  </head>
-  
-  <body>
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-      
-      <a-assets>
-        <a-asset-item id="myModel" src="./model.glb"></a-asset-item>
-      </a-assets>
+    
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        
+        /* The Modern UI Overlay */
+        #ui-overlay {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            display: none; /* Hidden by default, shown via JS */
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+        }
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        .instruction-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            text-align: center;
+        }
 
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-gltf-model src="#myModel" position="0 0 0.1" rotation="0 0 0" scale="0.1 0.1 0.1"></a-gltf-model>
-      </a-entity>
+        .instruction-card p {
+            margin: 0;
+            color: #1a1a1a;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        /* Scanning Animation */
+        .scanner-ring {
+            width: 60px;
+            height: 60px;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(1.2); opacity: 0; }
+        }
+
+        /* Initial Loading Screen */
+        #loading-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading-screen">
+        <div style="text-align: center;">
+            <div class="scanner-ring" style="border-color: #333; margin-inline: auto;"></div>
+            <p style="color: #333; letter-spacing: 1px;">LOADING EXPERIENCE...</p>
+        </div>
+    </div>
+
+    <div id="ui-overlay">
+        <div class="scanner-ring"></div>
+        <div class="instruction-card">
+            <p>እባክዎን ካርዱን ስካን ያድርጉ</p>
+            <span style="font-size: 0.8rem; opacity: 0.7;">(Please scan the card)</span>
+        </div>
+    </div>
+
+    <a-scene 
+        mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.001; uiLoading: no; uiError: no; uiScanning: no;" 
+        color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights, antialias: true, powerPreference: high-performance" 
+        vr-mode-ui="enabled: false" 
+        device-orientation-permission-ui="enabled: false">
       
+        <a-assets>
+            <a-asset-item id="myModel" src="./model.glb"></a-asset-item>
+        </a-assets>
+
+        <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="far: 10000; objects: .clickable"></a-camera>
+
+        <a-entity id="target-anchor" mindar-image-target="targetIndex: 0">
+            <a-gltf-model src="#myModel" position="0 0 0.1" rotation="0 0 0" scale="0.1 0.1 0.1"></a-gltf-model>
+        </a-entity>
     </a-scene>
-  </body>
+
+    <script>
+        const uiOverlay = document.getElementById('ui-overlay');
+        const targetAnchor = document.getElementById('target-anchor');
+        const loadingScreen = document.getElementById('loading-screen');
+
+        // Hide loading screen when AR is ready
+        document.querySelector('a-scene').addEventListener("arReady", (event) => {
+            loadingScreen.style.display = "none";
+        });
+
+        // Show Amharic text when card is NOT found
+        targetAnchor.addEventListener("targetLost", (event) => {
+            uiOverlay.style.display = "flex";
+        });
+
+        // Hide Amharic text when card IS found
+        targetAnchor.addEventListener("targetFound", (event) => {
+            uiOverlay.style.display = "none";
+        });
+    </script>
+</body>
 </html>
